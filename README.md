@@ -19,13 +19,10 @@ Along with that, you would need to tell deis-router a little about it:
 
 You should then be able to open a browser to ceph-dash at your wildcard domain, ie: http://ceph-dash.example.com
 
-Alternatively, there is a ceph-dash.cloud-init in this project that can be used to install this as a fleet unit:
+_Alternatively_, there is a [ceph-dash-deis.cloud-init](https://github.com/ianblenke/docker-ceph-dash/blob/master/ceph-dash-deis.cloud-init) in this project that can be used to install this as a fleet unit:
 
-    sudo coreos-cloudinit --from-file=ceph-dash.cloud-init
+    sudo coreos-cloudinit --from-file=ceph-dash-deis.cloud-init
 
-Or simply add the contents of that to your [Deis](http://deis.io) cloud-init user-data yaml file.
+Or simply add the contents of this file to your [Deis](http://deis.io) cloud-init user-data yaml file.
 
 You could also probably PaaS deploy this with some effort. If you manage that, please fork this project and generate a PR with some instructions!
-
-Enjoy.
-

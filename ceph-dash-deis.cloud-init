@@ -1,0 +1,66 @@
+#cloud-config
+coreos:
+  units:
+    - name: ceph-dash-deis-create-fleet-units.service
+      command: start
+      content: |
+        [Unit]
+        After=docker.service
+        ConditionFileIsExecutable=/srv/ceph-dash-deis-create-fleet-units.sh
+        ConditionFileNotEmpty=/srv/ceph-dash@.service
+
+        [Service]
+        ExecStart=/srv/ceph-dash-deis-create-fleet-units.sh
+        RemainAfterExit=no
+        Type=oneshot
+write_files:
+  - path: /srv/ceph-dash-deis-create-fleet-units.sh
+    permissions: '0755'
+    owner: root
+    content: |
+      #!/bin/bash
+      source /etc/environment
+      set -ex
+
+      mkdir -p /srv
+
+      for servicename in ceph-dash ceph-dash-publisher ; do
+        cp /srv/$servicename@.service /srv/$servicename@$(hostname).service
+        sed -i -e "s/%i/$(hostname)/" /srv/$servicename@$(hostname).service
+        ( echo -n MachineID=; cat /etc/machine-id ) >> /srv/$servicename@$(hostname).service
+        /usr/bin/fleetctl start /srv/$servicename@$(hostname).service
+      done
+  - path: /srv/ceph-dash-publisher@.service
+    permissions: 0644
+    owner: root
+    content: |
+      [Unit]
+      Description=Publish ceph-dash@%i to etcd for deis-router
+      After=docker.service
+      BindsTo=ceph-dash@%i.service
+
+      [Service]
+      EnvironmentFile=/etc/environment
+      ExecStart=/bin/sh -c "while true; do etcdctl set /deis/services/ceph-dash/ceph-dash@%i ${COREOS_PRIVATE_IPV4}:38080 --ttl 60; sleep 45; done"
+      ExecStop=/usr/bin/etcdctl rm /deis/services/ceph-dash/ceph-dash@%i
+
+      [X-Fleet]
+  - path: /srv/ceph-dash@.service
+    permissions: 0644
+    owner: root
+    content: |
+      [Unit]
+      Description=Run the ceph-dash@%i service
+      After=docker.service
+      BindsTo=ceph-dash@%i.service
+
+      [Service]
+      EnvironmentFile=/etc/environment
+      TimeoutStartSec=0
+      ExecStartPre=-/usr/bin/docker kill ceph-dash
+      ExecStartPre=-/usr/bin/docker rm ceph-dash
+      ExecStartPre=/usr/bin/docker pull ianblenke/ceph-dash
+      ExecStart=/usr/bin/docker run --name ceph-dash -p 15000:5000 --volumes-from deis-store-monitor ianblenke/ceph-dash
+      ExecStop=/usr/bin/docker stop ceph-dash
+
+      [X-Fleet]
