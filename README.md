@@ -26,3 +26,10 @@ _Alternatively_, there is a [ceph-dash-deis.cloud-init](https://github.com/ianbl
 Or simply add the contents of this file to your [Deis](http://deis.io) cloud-init user-data yaml file.
 
 You could also probably PaaS deploy this with some effort. If you manage that, please fork this project and generate a PR with some instructions!
+
+# Monitoring / Alerting
+
+With this deployed, you can now poll for parsable json with something like:
+
+    curl -H "Content-Type: application/json" https://ceph-dash.example.com
+
